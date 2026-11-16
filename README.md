@@ -123,7 +123,7 @@ Features that absorb this variation:
 
 - Ear screws go into slots, not fixed holes.
 - Horn screws go into long slots, so they suit any hole position along the arm.
-- The cradle's horn recess is open at both ends, so horn length does not matter.
+- The yoke and cradle horn recesses follow the SG90 dual-arm horn outline (the same shape as in the fit test). The cradle is shorter than the horn, so the arm tips run out past its ends.
 - The washers at the pivot take up differences in servo and horn height.
 
 Pan stack height depends on the unverified horn and ear values, which is why the collar gap is on the generous side.

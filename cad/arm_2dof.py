@@ -32,8 +32,6 @@ SV_HOLE_SPACING = 27.8
 # Servo horn (two-arm), typical values
 HORN_TOP = 15.8       # ear underside to flat top of horn
 HORN_ARM_T = 1.5
-HORN_SPAN = 35.0
-HORN_ARM_W = 6.0
 HORN_HUB_D = 7.0
 HORN_HUB_BOTTOM = 11.6
 # SG90 dual-arm horn outline (from the single-arm drawing; both arms identical)
@@ -216,19 +214,10 @@ def port_cutter(z0):
     return Part.Face(Part.makePolygon(pts)).extrude(V(0, y1 - y0, 0))
 
 
-def horn_recess_z(z0, z1):
-    """Horn recess in a horizontal face, running along X."""
-    half_w = (HORN_ARM_W + CL_HORN_W) / 2.0
-    half_l = HORN_SPAN / 2.0 + 1.0
-    cut = box(-half_l, half_l, -half_w, half_w, z0, z1)
-    return union(cut, zcyl((HORN_HUB_D + CL_HORN_W) / 2.0, z0, z1))
-
-
-def dual_horn_recess_z(z0, z1, cx=0.0, cy=0.0, along="x"):
+def dual_horn_recess_z(z0, z1, cx=0.0, cy=0.0, along="x", cl=CL_HORN_W / 2.0):
     """Recess shaped like the SG90 dual-arm horn: hub, tapered arms, round tips.
-    Offset outward by CL_HORN_W / 2 on every edge."""
+    Offset outward by cl (default CL_HORN_W / 2) on every edge; cl = 0 gives the horn itself."""
     import math
-    cl = CL_HORN_W / 2.0
     r = HORN_TIP_R + cl
     c = HORN_TIP_LEN - HORN_TIP_R          # tip centre distance from the hub centre
     w = HORN_ROOT_W / 2.0 + cl
@@ -248,6 +237,15 @@ def dual_horn_recess_z(z0, z1, cx=0.0, cy=0.0, along="x"):
         tip = pt(s * c, 0)
         parts.append(zcyl(r, z0, z1, tip.x, tip.y))
     return union(*parts)
+
+
+def dual_horn_recess_y(y0, y1, cx=0.0, cz=0.0):
+    """Dual-arm horn recess in a face normal to Y, arms along X."""
+    # Rotating +90 deg about X maps z -> y as y = -z, so build over z in [-y1, -y0]
+    cut = dual_horn_recess_z(-y1, -y0)
+    cut.rotate(V(0, 0, 0), V(1, 0, 0), 90)
+    cut.translate(V(cx, 0, cz))
+    return cut
 
 
 def horn_pilot_slots_z(z0, z1):
@@ -317,7 +315,7 @@ def make_pan_yoke():
     shape = union(plate, servo_arm, pivot_arm, rear_wall)
     cuts = [
         zcyl(CENTER_ACCESS_D / 2.0, Z_PLATE_BOT - 1, Z_PLATE_TOP + 1),
-        horn_recess_z(Z_PLATE_BOT - 1, Z_PLATE_BOT + RECESS_DEPTH),
+        dual_horn_recess_z(Z_PLATE_BOT - 1, Z_PLATE_BOT + RECESS_DEPTH),
         horn_pilot_slots_z(Z_PLATE_BOT - 1, Z_PLATE_TOP + 1),
         # Tilt servo window; the servo's far end points down
         box(-SV_WID / 2.0 - CL_POCKET, SV_WID / 2.0 + CL_POCKET,
@@ -339,11 +337,9 @@ def make_tilt_cradle():
         box(-L, L, -W_OUT, -W_IN, H - CR_BELOW, H + CR_ABOVE),
         box(-L, L, W_IN, W_OUT, H - CR_BELOW, H + CR_ABOVE),
         box(-L, L, -W_OUT, W_OUT, H - CR_BELOW, H - CR_BELOW + CR_FLOOR_T))
-    half_w = (HORN_ARM_W + CL_HORN_W) / 2.0
     cuts = [
-        # Open-ended horn recess in the outer face, so horn length does not matter
-        box(-L - 1, L + 1, -W_OUT - 1, Y_HORN_FLOOR, H - half_w, H + half_w),
-        ycyl((HORN_HUB_D + CL_HORN_W) / 2.0, -W_OUT - 1, Y_HORN_FLOOR, 0, H),
+        # Dual-arm horn recess in the outer face; the arm tips run out past the cradle ends
+        dual_horn_recess_y(-W_OUT - 1, Y_HORN_FLOOR, 0, H),
         ycyl(CENTER_ACCESS_D / 2.0, -W_OUT - 1, -W_IN + 1, 0, H),
         yslot(-9.5, H, "x", 8.0, M2_PILOT - 0.2, -W_OUT - 1, -W_IN + 1),
         yslot(9.5, H, "x", 8.0, M2_PILOT - 0.2, -W_OUT - 1, -W_IN + 1),
@@ -419,10 +415,8 @@ def make_servo_local():
 
 
 def make_horn_local():
-    half_l = HORN_SPAN / 2.0
-    half_w = HORN_ARM_W / 2.0
     return union(
-        box(-half_l, half_l, -half_w, half_w, HORN_TOP - HORN_ARM_T, HORN_TOP),
+        dual_horn_recess_z(HORN_TOP - HORN_ARM_T, HORN_TOP, cl=0.0),
         zcyl(HORN_HUB_D / 2.0, HORN_HUB_BOTTOM, HORN_TOP))
 
 

@@ -36,6 +36,10 @@ HORN_SPAN = 35.0
 HORN_ARM_W = 6.0
 HORN_HUB_D = 7.0
 HORN_HUB_BOTTOM = 11.6
+# SG90 dual-arm horn outline (from the single-arm drawing; both arms identical)
+HORN_TIP_LEN = 15.95  # hub centre to the end of one arm tip
+HORN_TIP_R = 1.9      # arm tip radius (3.8 wide at the tip)
+HORN_ROOT_W = 5.5     # arm width at the hub centre, tapering to the tip
 
 # Generic laser: 6 mm barrel module
 LASER_D = 6.0
@@ -220,6 +224,32 @@ def horn_recess_z(z0, z1):
     return union(cut, zcyl((HORN_HUB_D + CL_HORN_W) / 2.0, z0, z1))
 
 
+def dual_horn_recess_z(z0, z1, cx=0.0, cy=0.0, along="x"):
+    """Recess shaped like the SG90 dual-arm horn: hub, tapered arms, round tips.
+    Offset outward by CL_HORN_W / 2 on every edge."""
+    import math
+    cl = CL_HORN_W / 2.0
+    r = HORN_TIP_R + cl
+    c = HORN_TIP_LEN - HORN_TIP_R          # tip centre distance from the hub centre
+    w = HORN_ROOT_W / 2.0 + cl
+    # Upper side line from (0, w) tangent to the tip circle at (c, 0)
+    big_l = math.hypot(c, w)
+    phi = math.atan2(-w, c) + math.asin(r / big_l)
+    t = math.sqrt(big_l ** 2 - r ** 2)
+    tx, ty = t * math.cos(phi), w + t * math.sin(phi)
+
+    def pt(x, y):
+        return V(cx + x, cy + y, z0) if along == "x" else V(cx - y, cy + x, z0)
+
+    parts = [zcyl(HORN_HUB_D / 2.0 + cl, z0, z1, cx, cy)]
+    for s in (-1, 1):
+        poly = [pt(0, -w), pt(s * tx, -ty), pt(s * tx, ty), pt(0, w), pt(0, -w)]
+        parts.append(Part.Face(Part.makePolygon(poly)).extrude(V(0, 0, z1 - z0)))
+        tip = pt(s * c, 0)
+        parts.append(zcyl(r, z0, z1, tip.x, tip.y))
+    return union(*parts)
+
+
 def horn_pilot_slots_z(z0, z1):
     return union(zslot(-9.5, 0, "x", 8.0, M2_PILOT - 0.2, z0, z1),
                  zslot(9.5, 0, "x", 8.0, M2_PILOT - 0.2, z0, z1))
@@ -350,21 +380,30 @@ def make_pivot_spacer():
 def make_fit_test():
     """Small plate with every critical fit, to test on the real parts before the full print."""
     t = 5.0
-    shape = box(-14, 62, -12, 12, 0, t)
+    shape = box(-14, 62, -19, 19, 0, t)
     cuts = [
         box(-SV_SHAFT_OFF - CL_POCKET, SV_FAR + CL_POCKET,
             -SV_WID / 2.0 - CL_POCKET, SV_WID / 2.0 + CL_POCKET, -1, t + 1),
         zslot(HOLE_A, 0, "x", EAR_SLOT_LEN, M2_PILOT, -1, t + 1),
         zslot(HOLE_B, 0, "x", EAR_SLOT_LEN, M2_PILOT, -1, t + 1),
     ]
-    # Horn recess along the plate's short side, open at both edges
-    half_w = (HORN_ARM_W + CL_HORN_W) / 2.0
-    cuts.append(box(40 - half_w, 40 + half_w, -13, 13, t - RECESS_DEPTH, t + 1))
-    cuts.append(zcyl((HORN_HUB_D + CL_HORN_W) / 2.0, t - RECESS_DEPTH, t + 1, 40, 0))
+    # Dual-arm horn recess along the plate's short side
+    cuts.append(dual_horn_recess_z(t - RECESS_DEPTH, t + 1, 40, 0, along="y"))
     cuts.append(zcyl(CENTER_ACCESS_D / 2.0, -1, t + 1, 40, 0))
     cuts.append(zcyl((LASER_D + CL_BORE) / 2.0, -1, t + 1, 54, -5))
     cuts.append(zcyl(M3_PIVOT / 2.0, -1, t + 1, 54, 6))
     return solid(shape.cut(cuts), "fit_test")
+
+
+def make_horn_fit_test():
+    """Small plate with only the dual-arm horn recess, for a quick horn fit check."""
+    t = RECESS_DEPTH + 1.5
+    half_l = HORN_TIP_LEN + CL_HORN_W / 2.0 + 2.5
+    half_w = (HORN_HUB_D + CL_HORN_W) / 2.0 + 2.5
+    shape = box(-half_l, half_l, -half_w, half_w, 0, t)
+    cuts = [dual_horn_recess_z(t - RECESS_DEPTH, t + 1),
+            zcyl(CENTER_ACCESS_D / 2.0, -1, t + 1)]
+    return solid(shape.cut(cuts), "horn_fit_test")
 
 
 # ----------------------- NON-PRINTED PARTS, FOR CHECKS -----------------------

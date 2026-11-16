@@ -27,7 +27,8 @@ Print `0_fit_test` first. Sizes are as printed. Weights are for solid PLA, so re
 
 | File | Size (mm) | Solid weight | Orientation |
 |---|---|---|---|
-| `0_fit_test_print_first` | 76 x 24 x 5 | 9 g | Flat |
+| `0_fit_test_print_first` | 76 x 38 x 5 | 15 g | Flat |
+| `0_horn_fit_test` (optional, horn only) | 38 x 13 x 3 | 1.4 g | Flat |
 | `1_base_plate` | 140 x 140 x 6 | 145 g | Flat |
 | `2_riser` | 92 x 92 x 83 | 120 g | Flange down |
 | `3_pan_yoke` | 60 x 66 x 44 | 38 g | Plate down |
@@ -77,7 +78,7 @@ Print `0_fit_test` first. It takes little filament and tests every critical fit.
 |---|---|---|
 | Rectangular servo pocket | Slides in by hand, with no rocking | `CL_POCKET` (smaller if loose, larger if tight) |
 | Ear slots | Ear holes line up over the slots | `SV_HOLE_SPACING` |
-| Slot across the plate | Horn arm drops in with little side play | `CL_HORN_W` |
+| Dual-arm horn recess (also in `0_horn_fit_test`) | Horn drops in with little play all round | `CL_HORN_W`, `HORN_TIP_LEN`, `HORN_ROOT_W` |
 | Larger round hole, 6.2 mm | Laser barrel slides in snugly | `LASER_D`, `CL_BORE` |
 | Smaller round hole, 3.1 mm | M3 screw turns without wobble | `M3_PIVOT` |
 

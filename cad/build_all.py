@@ -20,10 +20,12 @@ for path in (STL_DIR, STEP_DIR):
 
 printed = {name: shape for name, (shape, _) in arm.make_printed_parts().items()}
 printed["fit_test"] = arm.make_fit_test()
+printed["horn_fit_test"] = arm.make_horn_fit_test()
+SPECIAL_STEMS = {"fit_test": "0_fit_test_print_first", "horn_fit_test": "0_horn_fit_test"}
 
 for index, (name, shape) in enumerate(printed.items(), start=1):
     oriented = arm.print_orientation(name, shape)
-    stem = "%d_%s" % (index, name) if name != "fit_test" else "0_fit_test_print_first"
+    stem = SPECIAL_STEMS.get(name, "%d_%s" % (index, name))
     mesh = MeshPart.meshFromShape(Shape=oriented, LinearDeflection=0.02,
                                   AngularDeflection=0.25, Relative=False)
     mesh.write(os.path.join(STL_DIR, stem + ".stl"))

@@ -65,6 +65,8 @@ BASE_CORNER_D = 5.0
 FLANGE_R = 46.0
 FLANGE_T = 5.0
 FLANGE_BOLT_R = 40.0
+FLANGE_PIN_CL = 0.15  # diametral clearance of base plug pins inside riser holes (M3_CLEAR)
+FLANGE_PIN_CHAMFER = 0.3  # top lead-in chamfer on base plug pins
 COLUMN_R = 30.0
 COLUMN_WALL = 4.0
 COLLAR_INNER_R = 25.0
@@ -119,6 +121,10 @@ Z_PLATE_BOT = Z_PLATE_TOP - PLATE_T
 Z_DECK = Z_PLATE_BOT + RECESS_DEPTH - HORN_TOP    # pan servo ears rest here
 Z_COLLAR_TOP = Z_PLATE_BOT - COLLAR_GAP
 Z_DECK_BOT = Z_DECK - DECK_T
+
+FLANGE_HOLE_XY = FLANGE_BOLT_R * 0.7071
+FLANGE_PIN_D = M3_CLEAR - FLANGE_PIN_CL           # plug pin OD matching riser's 4 M3_CLEAR holes
+FLANGE_PIN_H = FLANGE_T                           # flush with top of riser flange
 
 CR_OUTER_HALF_W = CR_INNER_HALF_W + CR_PLATE_T
 Y_HORN_FLOOR = -(CR_OUTER_HALF_W - RECESS_DEPTH)
@@ -234,16 +240,24 @@ def make_base_plate():
     for sx in (-1, 1):
         for sy in (-1, 1):
             cuts.append(zcyl(BASE_CORNER_D / 2.0, -1, BASE_T + 1, sx * corner, sy * corner))
-    bolt = FLANGE_BOLT_R * 0.7071
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            cuts.append(zcyl(M3_CLEAR / 2.0, -1, BASE_T + 1, sx * bolt, sy * bolt))
-            cuts.append(hex_nut_pocket_z(M3_NUT_AF, sx * bolt, sy * bolt, -1, M3_NUT_H))
     # Engraved arrow on the top face pointing at the laser's home direction
     pts = [V(half - 6, 0, BASE_T - 0.6), V(half - 16, 5, BASE_T - 0.6),
            V(half - 16, -5, BASE_T - 0.6), V(half - 6, 0, BASE_T - 0.6)]
     cuts.append(Part.Face(Part.makePolygon(pts)).extrude(V(0, 0, 2)))
-    return solid(shape.cut(cuts), "base_plate")
+    base = shape.cut(cuts)
+    # Four building-block plug pins matching the riser's four M3_CLEAR flange holes
+    pins = []
+    pin_r = FLANGE_PIN_D / 2.0
+    chamfer = min(FLANGE_PIN_CHAMFER, pin_r * 0.5, FLANGE_PIN_H * 0.5)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            px, py = sx * FLANGE_HOLE_XY, sy * FLANGE_HOLE_XY
+            pins.append(zcyl(pin_r, BASE_T - 0.5, BASE_T + FLANGE_PIN_H - chamfer, px, py))
+            if chamfer > 0:
+                pins.append(Part.makeCone(
+                    pin_r, pin_r - chamfer, chamfer,
+                    V(px, py, BASE_T + FLANGE_PIN_H - chamfer), V(0, 0, 1)))
+    return solid(union(base, *pins), "base_plate")
 
 
 def make_riser():
@@ -265,10 +279,10 @@ def make_riser():
         port_cutter(z_bot + FLANGE_T + 2),
         port_cutter(z_bot + 36),
     ]
-    bolt = FLANGE_BOLT_R * 0.7071
     for sx in (-1, 1):
         for sy in (-1, 1):
-            cuts.append(zcyl(M3_CLEAR / 2.0, z_bot - 1, z_bot + FLANGE_T + 1, sx * bolt, sy * bolt))
+            cuts.append(zcyl(M3_CLEAR / 2.0, z_bot - 1, z_bot + FLANGE_T + 1,
+                             sx * FLANGE_HOLE_XY, sy * FLANGE_HOLE_XY))
     return solid(shape.cut(cuts), "riser")
 
 

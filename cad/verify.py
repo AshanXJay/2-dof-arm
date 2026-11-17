@@ -125,6 +125,35 @@ check(tip > arm.LH_HALF_W, "pivot screw tip at y = %.1f clears the laser holder 
 nut_engaged = (arm.CR_INNER_HALF_W + arm.M3_NUT_H) - tip
 check(nut_engaged >= 2.0, "pivot screw engages the nut by %.1f mm" % min(nut_engaged, arm.M3_NUT_H))
 
+print("--- Base-to-riser plug fit")
+pin_radial_gap = (arm.M3_CLEAR - arm.FLANGE_PIN_D) / 2.0
+check(0.05 <= pin_radial_gap <= 0.25,
+      "base plug pins (%.2f mm) fit riser flange holes (%.2f mm) with %.3f mm radial clearance" % (
+          arm.FLANGE_PIN_D, arm.M3_CLEAR, pin_radial_gap))
+base_shape = items["base_plate"][0]
+riser_shape = items["riser"][0]
+check(abs(base_shape.BoundBox.ZMax - (arm.BASE_T + arm.FLANGE_T)) < 1e-4,
+      "base plug pins sit flush with the riser flange top (z = %.1f mm)" % base_shape.BoundBox.ZMax)
+max_rot_vol = 0.0
+for deg in (0, 90, 180, 270):
+    rot_riser = arm.posed(riser_shape, "pan", deg, 0)
+    max_rot_vol = max(max_rot_vol, base_shape.common(rot_riser).Volume)
+check(max_rot_vol < 1e-3,
+      "base pins seat into riser holes with zero interference in all four 90 deg orientations (%.4f mm3)" % max_rot_vol)
+aligned_pins = 0
+for sx in (-1, 1):
+    for sy in (-1, 1):
+        px, py = sx * arm.FLANGE_HOLE_XY, sy * arm.FLANGE_HOLE_XY
+        pin_probe = arm.zcyl(arm.FLANGE_PIN_D / 2.0 - 0.05, arm.BASE_T + 0.5,
+                             arm.BASE_T + arm.FLANGE_PIN_H - arm.FLANGE_PIN_CHAMFER - 0.1, px, py)
+        hole_ring = arm.zcyl(arm.M3_CLEAR / 2.0 + 0.3, arm.BASE_T + 0.5,
+                             arm.BASE_T + arm.FLANGE_T - 0.5, px, py)
+        if (pin_probe.common(base_shape).Volume > 0.9 * pin_probe.Volume
+                and pin_probe.common(riser_shape).Volume < 1e-4
+                and hole_ring.common(riser_shape).Volume > 1.0):
+            aligned_pins += 1
+check(aligned_pins == 4, "all 4 base plug pins align concentrically inside the 4 riser flange holes (%d/4)" % aligned_pins)
+
 print("RESULT: %s" % ("ALL CHECKS PASSED" if not failures else "%d FAILED" % len(failures)))
 for failure in failures:
     print("  - " + failure)

@@ -28,7 +28,7 @@ Print `0_fit_test` first. Sizes are as printed. Weights are for solid PLA, so re
 | File | Size (mm) | Solid weight | Orientation |
 |---|---|---|---|
 | `0_fit_test_print_first` | 76 x 24 x 5 | 9 g | Flat |
-| `1_base_plate` | 140 x 140 x 6 | 145 g | Flat |
+| `1_base_plate` | 140 x 140 x 11 | 145 g | Flat |
 | `2_riser` | 92 x 92 x 83 | 120 g | Flange down |
 | `3_pan_yoke` | 60 x 66 x 44 | 38 g | Plate down |
 | `4_tilt_cradle` | 28 x 34 x 21 | 9 g | Floor down |
@@ -43,7 +43,6 @@ Print `0_fit_test` first. Sizes are as printed. Weights are for solid PLA, so re
 |---|---|---|
 | SG90 servo with two-arm horn | 2 | Pan and tilt |
 | M2 self-tapping screw, about 6 mm | 4, plus 4 supplied with the servos | Horns to printed parts; servo ears |
-| M3 x 10 screw and nut | 4 | Riser to base |
 | M3 x 16 screw and nut | 1 | Tilt pivot |
 | M3 washers | A few | Shim the pivot spacer gap |
 | M3 x 6 screw | 3 | Laser holder (2) and laser set screw (1) |
@@ -57,7 +56,7 @@ Print `0_fit_test` first. Sizes are as printed. Weights are for solid PLA, so re
 Centre both servos at 90 degrees with the Arduino before fitting the horns.
 
 1. **Check the fit.** Try the servo, horn and laser in the fit-test piece (see below).
-2. **Riser to base.** Press the M3 nuts into the underside of the base, then bolt the riser on with the cable windows facing the side you want.
+2. **Riser to base.** Align the riser's four flange holes over the four building-block pins on the base plate with the cable windows facing the side you want, and press it straight down until flush. Adjust `FLANGE_PIN_CL` in `cad/arm_2dof.py` if you want a tighter or looser fit.
 3. **Pan servo.** Pass the plug down through the riser pocket and out of the lower window, rest the ears on the deck, and screw them into the slots.
 4. **Yoke.** Screw a horn into the recess under the yoke, in the long slots. Press the horn onto the servo with the yoke facing the arrow on the base, then fit the centre screw through the hole in the yoke plate.
 5. **Tilt servo.** From between the arms, pass the plug and body out through the window in the yoke arm, and screw the ears in from the inside.
@@ -129,4 +128,4 @@ Pan stack height depends on the unverified horn and ear values, which is why the
 
 ## Design check results
 
-`cad/verify.py` reports 37 passed checks: collisions at 35 pan and tilt positions, watertight meshes, bed fit, beam path and assembly clearances. These checks use the model's dimensions, so they do not replace test-fitting real parts. Nothing has been printed yet.
+`cad/verify.py` reports 41 passed checks: collisions at 35 pan and tilt positions, watertight meshes, bed fit, beam path, assembly clearances and base-to-riser plug pin fit. These checks use the model's dimensions, so they do not replace test-fitting real parts. Nothing has been printed yet.
